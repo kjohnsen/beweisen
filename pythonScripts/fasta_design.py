@@ -48,7 +48,7 @@ for key in collection.keys():
 	keys.sort()
 	for bubble_number in keys:
 		bubble_number = str(bubble_number)
-		out.write('>ref|' + bubble_number + 'for' + key +'\n' + collection[key][bubble_number] + '\n')#.format(num, key, (collection[key][num])))
+		out.write('>lcl|' + bubble_number + " " +  key +'\n' + collection[key][bubble_number] + '\n')#.format(num, key, (collection[key][num])))
 	outputList.append(out)
 argument = 'python /fslgroup/fslg_genome/compute/cole/beweisen/pythonScripts/blastbee.py ' + file_names[:-1]
 subprocess.call(argument, shell = True)
