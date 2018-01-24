@@ -1,7 +1,12 @@
-bubble_fasta_files/
-output/
-slurmScripts/
-upload_user_files_here/
+#directories to be ignored:
+/bubble_fasta_files/
+/output/
+/slurmScripts/
+/upload_user_files_here/
 
-#VIM's swap files
+#VIM's swap files, anywhere they're found:
 *~
+
+#tmp files, anywhere
+tmp.*
+*.tmp
