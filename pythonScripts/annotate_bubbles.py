@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 # Created by Kyle Johnsen, 1/17/18
-# Takes aligned bubbles and annotation and creates a summary file listing where bubbles are found, in the following 4-column format:
+# Takes aligned bubbles and annotation and creates a bubble annotation (.bann) file listing where bubbles are found, in the following 4-column format:
 #
 # 	bubble_id	  containing_gene  left_gene  right_gene  feature_cvg
 #	...
 #
 # bubble_id
-# containing_gene: the gene the bubble is located in
+# containing_gene: the gene the bubble is located in. If there are multiple, gene symbols are separated with a semicolon
 # left_gene: the gene on the left (lower bp coordinate) side if in an intergenic region
 # right_gene: if intergenic, the gene on the right side (higher bp coordinate)
 # feature_cvg: percent coverage of the feature--i.e., the gene or intergenic region--by the bubble sequence
@@ -74,7 +74,11 @@ def get_containing_gene(gtf_db, bubble_region):
 ### PARSE ARGUMENTS
 blast_file = sys.argv[1]
 gtf_file = sys.argv[2]
-out_file = sys.argv[3]
+try:
+  out_file = sys.argv[3]
+  output = open(out_file, 'w')
+except IndexError:
+  output = sys.stdout
 
 
 ### PARSE GTF FILE
@@ -83,16 +87,15 @@ tmp_file = "tmp.gtf"
 subprocess.call("awk '$3==\"gene\"' %s > %s" % (gtf_file, tmp_file), shell=True)
 
 ## CALL GFFUTILS TO STORE GTF FILE
-#gtf_db = gffutils.create_db(tmp_file, dbfn='tmp.db', force=True, disable_infer_genes=True)
-gtf_db = gffutils.FeatureDB("tmp.db")
+gtf_db = gffutils.create_db(tmp_file, dbfn='tmp.db', force=True, disable_infer_genes=True)
+#gtf_db = gffutils.FeatureDB("tmp.db") # for faster debug
 
 
 ### PARSE BLASTOUT AND WRITE RESULTS
 # blast output format: qseqid sseqid length score qstart qend sstart send
 blast_file_handle = open(blast_file, 'r')
-out_file_handle = open(out_file, 'w')
-out_file_handle.write("# bubble_id | containing_gene | left_gene | right_gene | feature_cvg (%)\n")
-out_file_handle.write("# -------------------------------------------------------------------------------\n")
+output.write("# bubble_id | containing_gene | left_gene | right_gene | feature_cvg (%)\n")
+output.write("# -------------------------------------------------------------------------------\n")
 for line in blast_file_handle:
   line = line.strip().split()
   bubble_id = line[0]
@@ -102,7 +105,7 @@ for line in blast_file_handle:
   # if bubble in gene
   containing_gene = get_containing_gene(gtf_db, bubble_region)
   if len(containing_gene) != 0:
-    gene_string = "/".join([x.attributes["gene_symbol"][0] for x in containing_gene])
+    gene_string = ";".join([x.attributes["gene_symbol"][0] for x in containing_gene])
     if bubble_region[1] < bubble_region[2]:
       bubble_start = bubble_region[1]
       bubble_end = bubble_region[2]
@@ -134,10 +137,11 @@ for line in blast_file_handle:
       feature_cvg = "."
     result_line = '\t'.join([str(x) for x in [bubble_id, '.', left_gene_string, right_gene_string, feature_cvg]])
 
-  out_file_handle.write(result_line + '\n')
+  output.write(result_line + '\n')
 
 blast_file_handle.close()
-out_file_handle.close()
+if output != sys.stdout:
+  output.close()
 
 #print(list(gtf_db.region(region=('2L', 779000, 783000), completely_within=True)))
 #print(get_left_gene(gtf_db, ('2L', 781000, 781500)))
@@ -147,5 +151,5 @@ out_file_handle.close()
 
 
 ### CLEANUP
-#os.remove(tmp_file)
-#os.remove('tmp.db') #TODO put back removes
+os.remove(tmp_file)
+os.remove('tmp.db')
