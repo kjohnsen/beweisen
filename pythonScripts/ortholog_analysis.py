@@ -5,19 +5,20 @@
 #
 # bubble_id | concordance | species_mapped(%) | map_count_avg | ortholog_group_1:% | ortholog_group_2:% | ortholog_group_3:%...
 #
-# where "ortholog_group"s are sorted in descending order of proportion of matches
-# and concordance = (proportion of bubbles mapped) * (biggest ortholog group [group 1] proportion)
+# where "ortholog_group"s are sorted in descending order of proportion of matches:
+# that is, what percentage of species mapped to that group
+# and concordance = biggest ortholog group [group 1] proportion
 #
-# map_count_avg is how many times a bubble mapped to each species, on average. We would expect 1.
+# map_count_avg is how many times a bubble mapped for each species, on average. We would expect 1.
 
 # Input is as follows: ortholog_table_file species_1.bann[ species_2.bann species_3.bann...]
 # Output is to stdout
 
-# Ortholog group proportions are calculated as a percentage of a total group counter, 
+# Ortholog group proportions are calculated as a percentage of a total of #species*2
 # where groups for genic bubbles count twice. For example, for two bubbles, one 
 # in gene1 and the other between gene2 and gene3, ortholog_group_1 would have a value
-# of 2/4 = 50%. Where a genic bubble straddles multiple genes, the ortholog group of 
-# each gene only gets counted once instead of twice.
+# of 2/4 = 50%. Where a genic bubble covers multiple genes, the ortholog group of 
+# each gene gets counted twice just as for other genic bubbles
 
 # Created 1/29/18, Kyle Johnsen
 
@@ -83,15 +84,9 @@ for filename in bubble_annotations:
     # if genic
     if line[1] != ".":
       genes = line[1].split(';')
-      assert len(genes) < 3
-      if len(genes) == 1:
-        ortho_group = ortho_dict[genes[0]]
+      for gene in genes:
+        ortho_group = ortho_dict[gene]
         results_dict[bubble_id][ortho_group] += 2
-      # if multiple genes
-      else:
-        for gene in genes:
-          ortho_group = ortho_dict[gene]
-          results_dict[bubble_id][ortho_group] += 1
 
     # if intergenic
     else:
@@ -114,10 +109,10 @@ for (bubble_id, group_counter) in results_dict.items():
   species_mapped = sum(species_per_bubble_dict[bubble_id])
   species_mapped_percent = species_mapped / num_species * 100
   assert species_mapped_percent >= 0 and species_mapped_percent <= 100
-  concordance = species_mapped_percent / 100 * ortho_groups_sorted[0][1] / total_group_count * 100
+  concordance = ortho_groups_sorted[0][1] / (num_species * 2) * 100
   map_count_avg = total_group_count / (species_mapped * 2)
   bubble_results = "{:s}\t{:.2f}\t{:.2f}\t{:.2f}\t".format(bubble_id, concordance, species_mapped_percent, map_count_avg)
-  bubble_results = bubble_results + '\t'.join(["{:s}:{:.2f}".format(x[0], x[1]/total_group_count*100) for x in ortho_groups_sorted])
+  bubble_results = bubble_results + '\t'.join(["{:s}:{:.2f}".format(x[0], x[1]/(num_species * 2)*100) for x in ortho_groups_sorted])
   print(bubble_results)
 
 

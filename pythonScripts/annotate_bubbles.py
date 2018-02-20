@@ -13,7 +13,7 @@
 # feature_cvg: percent coverage of the feature--i.e., the gene or intergenic region--by the bubble sequence
 
 # Input: three arguments:
-# 	1 - .blastout file containing alignments for bubbles of interest
+# 	1 - .blastout (.mutual) file containing alignments for bubbles of interest
 # 	2 - .gtf file containing genome annotation file for species of interest
 # 	3 - desired output file location [stdout]
 
